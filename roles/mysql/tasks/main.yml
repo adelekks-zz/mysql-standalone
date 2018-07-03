@@ -1,0 +1,39 @@
+---
+- name: Copy Mysql repo file
+  template:
+   src: "mysql-community.repo.j2"
+   dest: "/etc/yum.repos.d/mysql-community.repo"
+   owner: root
+   group: root
+   mode: 0600
+
+- name: Copy Mysql repo community-source file
+  template:
+   src: "mysql-community-source.repo.j2"
+   dest: "/etc/yum.repos.d/mysql-community-source.repo"
+   owner: root
+   group: root
+   mode: 0600
+
+- name: Install mysql-client  mysql-server MySQL-python packages
+  yum: state=present name={{ item }}
+  with_items:
+  - mysql-server
+  - MySQL-python
+
+- name: Start MySQL service
+  service: name=mysqld state=started enabled=yes
+
+- name: Get superuser temporary password
+  shell: "grep 'temporary password' /var/log/mysqld.log |awk '{print $13}'"
+  register: temp_pass
+
+- debug: var=temp_pass.stdout
+
+- name: Create .my.cnf
+  template:
+   src: "{{ my_cnf_src }}"
+   dest: "{{ my_cnf_dir }}"
+   owner: root
+   group: root
+   mode: 0600
